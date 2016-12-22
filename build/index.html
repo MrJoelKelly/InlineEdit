@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <!-- SEO -->
+    <meta name="description" content="" />
+    <meta name="keyword" content="word1, word2" />
+
+    <!-- Viewport -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
+
+    <!-- Character Encoding -->
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+
+    <!-- Web Title -->
+    <title>InlineEdit Demo</title>
+
+    <!-- CSS -->
+    <link rel="stylesheet" type="text/css" href="build.css">
+    <link rel="stylesheet" type="text/css" href="../src/inlineedit.css">
+    <!-- JS -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <script src="../src/inlineedit.js"></script>
+    <script src="build.js"></script>
+  </head>
+  <body>
+    <h1>InlineEdit Demo</h1>
+
+    <header>
+      <div>Double click an initialised field to edit</div>
+      <ul>
+        <li><b>div.data</b> elements are the elements which will be made editable.</li>
+        <li>The <b>data-identifier</b> attribute on the element is <b>compulsory</b> and contains a unique identifier to be sent to the server (along with the data) on edit</li>
+        <li><b>data-regex</b> is an <i>optional</i> attribute, it takes a valid JS regex string and will be used to validate any changes</li>
+      </ul>
+    </header>
+
+    <main>
+      <h2>Example fields</h2>
+      <div class="data" data-identifier="18" data-regex="^([a-z])+$">Editable (ID = 18)</div>
+      <div class="non-editable">You can't edit this</div>
+    </main>
+  </body>
+</html>

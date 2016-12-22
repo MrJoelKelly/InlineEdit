@@ -1,0 +1,27 @@
+@import url(https://fonts.googleapis.com/css?family=Open+Sans:400,300,600,700,800);
+
+*{
+  padding:0;
+  margin:0;
+  box-sizing: border-box;
+}
+
+html,body{
+  font-family:'Open Sans', Roboto, Helvetica, sans-serif;
+  font-size:12px;
+}
+
+body{
+  padding:10px;
+  text-align: center;
+}
+
+header > ul{
+  display:inline-block;
+  text-align:left;
+  margin:20px 0;
+}
+
+main > div{
+  margin-bottom:10px;
+}
