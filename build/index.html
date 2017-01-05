@@ -31,12 +31,13 @@
         <li><b>div.data</b> elements are the elements which will be made editable.</li>
         <li>The <b>data-identifier</b> attribute on the element is <b>compulsory</b> and contains a unique identifier to be sent to the server (along with the data) on edit</li>
         <li><b>data-regex</b> is an <i>optional</i> attribute, it takes a valid JS regex string and will be used to validate any changes</li>
+        <li><b>data-regex-comment</b> is an <i>optional</i> attribute, which is only used when paired with <b>data-regex</b>. This comment will be shown to the user when RegEx validation fails.</li>
       </ul>
     </header>
 
     <main>
       <h2>Example fields</h2>
-      <div class="data" data-identifier="18" data-regex="^([a-z])+$">Editable (ID = 18)</div>
+      <div class="data" data-identifier="18" data-regex="^([a-z])+$" data-regex-comment="Lower case characters only">Editable (ID = 18)</div>
       <div class="non-editable">You can't edit this</div>
     </main>
   </body>

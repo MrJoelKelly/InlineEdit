@@ -15,14 +15,21 @@
       cancel: [27], //27 = Esc
       save: [13] //13 = Enter
     },
-    input_type: 'text'
+    input_type: 'text',
+    outer_click: { //When click outside of an editable element
+      enabled: true,
+      action: false //False to cancel, true to save
+    }
   };
 
   //Values pertaining to the element
   var values = {
     current_data: '', //The current text value of the element, sent to the server in case of wanting to record changes more accurately
     identifier: '', //From the data-identifier attribute
-    regex: ''
+    regex: {
+      expression: '',
+      comment: '' //Used to explain regex to user
+    }
   }
 
   $.fn.inlineEdit = function(user_options){
@@ -38,8 +45,7 @@
     //Iterate through keys given in users options
     for(var key in user_options){
       //Check not empty value
-      var empty_test = user_options[key] + ""; //Convert to string to perform boolean test
-      if(empty_test){ //If value not empty
+      if(!isEmpty(user_options[key])){ //If value not empty
         //If exists in default_options, these are user-definable options
         if(key in options){
           //If the key exists in system_options, we need to check that the parameter passed is also valid
@@ -57,7 +63,21 @@
                 valid = true;
               }
               break;
-            case 'keycodes':
+            case 'keycodes': //Any integer is valid
+              if('save' in user_options[key] && 'cancel' in user_options[key]){
+                if(!isEmpty(user_options[key].save) && !isEmpty(user_options[key].cancel)){
+                  if(!isNaN(user_options[key].save) && !isNaN(user_options[key].cancel)){
+                    valid = true;
+                  }
+                }
+              }
+              break;
+            case 'outer_click':
+              if('enabled' in user_options[key] && 'action' in user_options[key]){
+                options[key].enabled = getBoolean(user_options[key].enabled);
+                options[key].action = getBoolean(user_options[key].action);
+                valid = true;
+              }
               break;
             default: //Any others that don't require validation, such as buttonText
               valid = true;
@@ -79,7 +99,8 @@
       values.current_data = InlineEdit.text();
       values.identifier = InlineEdit.attr('data-identifier');
       if(!isEmpty(InlineEdit.attr('data-regex'))){
-        values.regex = new RegExp(InlineEdit.attr('data-regex'));
+        values.regex.expression = new RegExp(InlineEdit.attr('data-regex'));
+        values.regex.comment = InlineEdit.attr('data-regex-comment');
       }
 
       console.log(values)
@@ -104,26 +125,38 @@
       InlineEdit.find('div.InlineEdit-save').click(function(){ saveEdit(); })
 
       //Check for cancel/save when input is focused
-      InlineEdit.find('input[type=text]').keyup(function(e){ //e.which contains the keydown KeyCode
+      InlineEdit.find('input[type=' + options.input_type + ']').keyup(function(e){ //e.which contains the keydown KeyCode
         if($.inArray(e.which, options.keycodes.cancel) > -1){ // Revert to original content
           cancelEdit();
         }else if($.inArray(e.which, options.keycodes.save) > -1){ //Test & Save new value
           saveEdit();
         }
       })
+
+      //Check for outside click
+      $(document).on("click.outer_click", function(e){
+        if(!InlineEdit.is(e.target) && InlineEdit.has(e.target).length === 0 && options.outer_click.enabled){
+          if(options.outer_click.action){
+            saveEdit();
+          }else{
+            cancelEdit();
+          }
+        }
+      })
     }
   }
 
   function cancelEdit(){
-    InlineEdit.removeClass('InlineEdit-active').empty().append(values.current_data);
+    InlineEdit.removeClass('InlineEdit-active InlineEdit-error').empty().append(values.current_data);
+    $(document).unbind('click.outer_click');
   }
 
   function saveEdit(){
     removeErrors();
     var new_data = InlineEdit.find('input').val();
-    if(!isEmpty(values.regex)){ //If data-regex is set
-      if(!values.regex.test(new_data)){ //Test new data against regexp
-        throwError('Invalid value entered.');
+    if(!isEmpty(values.regex.expression)){ //If data-regex is set
+      if(!values.regex.expression.test(new_data)){ //Test new data against regexp
+        throwError(2);
         return false;
       }
     }
@@ -138,6 +171,10 @@
           id: values.identifier,
           old_data: values.current_data,
           new_data: new_data
+        },
+        statusCode: {
+          404: throwError(404),
+          500: throwError(500)
         }
       })
         .done(function(){ //On success
@@ -146,7 +183,7 @@
         })
         .fail(function(){ //On Fail, revert to previous
           cancelEdit();
-          throwError('Error sending to server',5000)
+          throwError(1,5000);
         });
     }else{
       cancelEdit();
@@ -168,16 +205,47 @@
     }
   }
 
+  //Checks if a value is boolean, converts from string, int etc. Returns true/false, also returns false if not boolean
+  function getBoolean(value){
+    var valid_values = [false,0,'false','0',true,1,'true','1'];
+    var index = valid_values.indexOf(value);
+    console.log(index)
+    if(index > 3 && index < 8){
+      return true;
+    }
+
+    return false;
+  }
   //Throws an error on the object
-  function throwError(text,timer){
+  function throwError(code,timer){
+    var error_codes = {
+      0: 'Unknown error occurred',
+      1: 'Error sending data to server',
+      2: 'Invalid value entered',
+      404: '404: Page (' + options.url + ') not found',
+      500: '500: Internal Server Error'
+    }
+
+    if(isEmpty(code) || isEmpty(error_codes[code])){
+      code = 0; //Unknown error
+    }
+
+    var text = error_codes[code];
+
+    //Displays custom data-regex-comment if exists
+    if(!isEmpty(values.regex.comment) && code == 2){
+      text = values.regex.comment;
+    }
+
     if(isEmpty(text)){ //Default error string
       text = 'An unknown error occurred';
     }
+
     var error_element = $('<div class="InlineEdit-error-float">' + text + '</div>');
 
     InlineEdit.addClass('InlineEdit-error').append(error_element);
 
-    if(!isEmpty(timer)){ //Setting timeout to hide certain errors after some time
+    if(!isEmpty(timer) && !  isNaN(timer)){ //Setting timeout to hide certain errors after some time
       setTimeout(function(){
         error_element.fadeOut(function(){error_element.remove();});
       }, timer);
